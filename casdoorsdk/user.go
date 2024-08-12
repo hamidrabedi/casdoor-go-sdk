@@ -449,3 +449,23 @@ func (c *Client) CheckUserPassword(user *User) (bool, error) {
 func (u User) GetId() string {
 	return fmt.Sprintf("%s/%s", u.Owner, u.Name)
 }
+
+func (c *Client) GetUserByParams(params map[string]string) (*User, error) {
+	if owner, ok := params["owner"]; !ok || owner == "" {
+		params["owner"] = c.OrganizationName
+	}
+
+	url := c.GetUrl("get-user", params)
+
+	bytes, err := c.DoGetBytes(url)
+	if err != nil {
+		return nil, err
+	}
+
+	var user *User
+	err = json.Unmarshal(bytes, &user)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
