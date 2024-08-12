@@ -50,6 +50,10 @@ func GetUserByUserId(userId string) (*User, error) {
 	return globalClient.GetUserByUserId(userId)
 }
 
+func GetUserByParams(queryMap map[string]string) (*User, error) {
+	return globalClient.GetUserByParams(queryMap)
+}
+
 // note: oldPassword is not required, if you don't need, just pass a empty string
 func SetPassword(owner, name, oldPassword, newPassword string) (bool, error) {
 	return globalClient.SetPassword(owner, name, oldPassword, newPassword)

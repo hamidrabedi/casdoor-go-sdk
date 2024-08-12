@@ -394,6 +394,26 @@ func (c *Client) GetUserByUserId(userId string) (*User, error) {
 	return user, nil
 }
 
+func (c *Client) GetUserByParams(queryMap map[string]string) (*User, error) {
+	if owner, ok := queryMap["owner"]; !ok || owner == "" {
+		queryMap["owner"] = c.OrganizationName
+	}
+
+	url := c.GetUrl("get-user", queryMap)
+
+	bytes, err := c.DoGetBytes(url)
+	if err != nil {
+		return nil, err
+	}
+
+	var user *User
+	err = json.Unmarshal(bytes, &user)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
 // note: oldPassword is not required, if you don't need, just pass a empty string
 func (c *Client) SetPassword(owner, name, oldPassword, newPassword string) (bool, error) {
 	param := map[string]string{
@@ -448,24 +468,4 @@ func (c *Client) CheckUserPassword(user *User) (bool, error) {
 
 func (u User) GetId() string {
 	return fmt.Sprintf("%s/%s", u.Owner, u.Name)
-}
-
-func (c *Client) GetUserByParams(params map[string]string) (*User, error) {
-	if owner, ok := params["owner"]; !ok || owner == "" {
-		params["owner"] = c.OrganizationName
-	}
-
-	url := c.GetUrl("get-user", params)
-
-	bytes, err := c.DoGetBytes(url)
-	if err != nil {
-		return nil, err
-	}
-
-	var user *User
-	err = json.Unmarshal(bytes, &user)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
 }
