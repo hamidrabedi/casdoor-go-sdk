@@ -589,3 +589,58 @@ func (c *Client) modifyToken(action string, token *Token, columns []string) (*Re
 
 	return resp, resp.Data == "Affected", nil
 }
+
+// modifyLdap is an encapsulation of LDAP CUD(Create, Update, Delete) operations.
+// possible actions are `add-ldap`, `update-ldap`, `delete-ldap`,
+func (c *Client) modifyLdap(action string, ldap *Ldap, columns []string) (*Response, bool, error) {
+	if ldap.Owner == "" {
+		ldap.Owner = "admin"
+	}
+
+	queryMap := map[string]string{
+		"id": fmt.Sprintf("%s/%s", ldap.Owner, ldap.Id),
+	}
+
+	if len(columns) != 0 {
+		queryMap["columns"] = strings.Join(columns, ",")
+	}
+
+	postBytes, err := json.Marshal(ldap)
+	if err != nil {
+		return nil, false, err
+	}
+
+	resp, err := c.DoPost(action, queryMap, postBytes, false, false)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return resp, resp.Data == "Affected", nil
+}
+
+// modifyInvitation is an encapsulation of invitation CUD(Create, Update, Delete) operations.
+// possible actions are `add-invitation`, `update-invitation`, `delete-invitation`,
+func (c *Client) modifyInvitation(action string, invitation *Invitation, columns []string) (*Response, bool, error) {
+	queryMap := map[string]string{
+		"id": fmt.Sprintf("%s/%s", invitation.Owner, invitation.Name),
+	}
+
+	if len(columns) != 0 {
+		queryMap["columns"] = strings.Join(columns, ",")
+	}
+
+	if invitation.Owner == "" {
+		invitation.Owner = c.OrganizationName
+	}
+	postBytes, err := json.Marshal(invitation)
+	if err != nil {
+		return nil, false, err
+	}
+
+	resp, err := c.DoPost(action, queryMap, postBytes, false, false)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return resp, resp.Data == "Affected", nil
+}

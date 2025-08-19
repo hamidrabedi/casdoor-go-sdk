@@ -1,4 +1,4 @@
-// Copyright 2023 The Casdoor Authors. All Rights Reserved.
+// Copyright 2025 The Casdoor Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,19 +14,22 @@
 
 package casdoorsdk
 
-import (
-	"testing"
-)
+func GetLdaps() ([]*Ldap, error) {
+	return globalClient.GetLdaps()
+}
 
-func TestSms(t *testing.T) {
-	// InitConfig(TestCasdoorEndpoint, TestClientId, TestClientSecret, TestJwtPublicKey, TestCasdoorOrganization, TestCasdoorApplication)
-	//
-	// sms := &smsForm{
-	//	Content:   "casdoor",
-	//	Receivers: []string{"+8613854673829", "+441932567890"},
-	// }
-	// err := SendSms(sms.Content, sms.Receivers...)
-	// if err != nil {
-	//	t.Fatalf("Failed to send sms: %v", err)
-	// }
+func GetLdap(id string) (*Ldap, error) {
+	return globalClient.GetLdap(id)
+}
+
+func AddLdap(Ldap *Ldap) (bool, error) {
+	return globalClient.AddLdap(Ldap)
+}
+
+func DeleteLdap(Ldap *Ldap) (bool, error) {
+	return globalClient.DeleteLdap(Ldap)
+}
+
+func UpdateLdap(Ldap *Ldap) (bool, error) {
+	return globalClient.UpdateLdap(Ldap)
 }

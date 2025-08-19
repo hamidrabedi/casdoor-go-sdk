@@ -196,14 +196,16 @@ type User struct {
 	Ldap       string            `xorm:"ldap varchar(100)" json:"ldap"`
 	Properties map[string]string `json:"properties"`
 
-	Roles       []*Role       `json:"roles"`
-	Permissions []*Permission `json:"permissions"`
-	Groups      []string      `xorm:"groups varchar(1000)" json:"groups"`
+	Roles                  []*Role       `json:"roles"`
+	Permissions            []*Permission `json:"permissions"`
+	Groups                 []string      `xorm:"groups varchar(1000)" json:"groups"`
+	LastChangePasswordTime string        `xorm:"varchar(100)" json:"lastChangePasswordTime"`
 
 	LastSigninWrongTime string `xorm:"varchar(100)" json:"lastSigninWrongTime"`
 	SigninWrongTimes    int    `json:"signinWrongTimes"`
 
-	ManagedAccounts []ManagedAccount `xorm:"managedAccounts blob" json:"managedAccounts"`
+	ManagedAccounts    []ManagedAccount `xorm:"managedAccounts blob" json:"managedAccounts"`
+	NeedUpdatePassword bool             `json:"needUpdatePassword"`
 }
 
 func (c *Client) GetGlobalUsers() ([]*User, error) {
