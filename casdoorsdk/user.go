@@ -458,3 +458,11 @@ func (c *Client) CheckUserPassword(user *User) (bool, error) {
 func (u User) GetId() string {
 	return fmt.Sprintf("%s/%s", u.Owner, u.Name)
 }
+
+func WebAuthnSignupBegin() ([]byte, error) {
+	return globalClient.WebAuthnSignupBegin()
+}
+
+func WebAuthnSignupFinish(credentialCreationResponse []byte) error {
+	return globalClient.WebAuthnSignupFinish(credentialCreationResponse)
+}
