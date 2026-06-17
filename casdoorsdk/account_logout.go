@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
-	"strings"
 )
 
 // OAuthLoginResult includes OAuth tokens plus the IdP session id returned at login.
@@ -32,33 +30,19 @@ type OAuthLoginResult struct {
 
 // ExchangeOAuthCode exchanges an authorization code and returns tokens with the IdP session id.
 func (c *Client) ExchangeOAuthCode(code string) (*OAuthLoginResult, error) {
-	data := url.Values{}
-	data.Set("grant_type", "authorization_code")
-	data.Set("client_id", c.ClientId)
-	data.Set("client_secret", c.ClientSecret)
-	data.Set("code", code)
-
-	tokenURL := fmt.Sprintf("%s/api/login/oauth/access_token", c.Endpoint)
-	req, err := http.NewRequest(http.MethodPost, tokenURL, strings.NewReader(data.Encode()))
-	if err != nil {
-		return nil, err
-	}
-	req.SetBasicAuth(c.ClientId, c.ClientSecret)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
+	contentType, body, err := createForm(map[string]string{
+		"grant_type":    "authorization_code",
+		"client_id":     c.ClientId,
+		"client_secret": c.ClientSecret,
+		"code":          code,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("%s", string(body))
+	respBytes, err := c.DoPostBytesRaw(c.GetUrl("login/oauth/access_token", nil), contentType, body)
+	if err != nil {
+		return nil, err
 	}
 
 	var wrapper struct {
@@ -66,7 +50,7 @@ func (c *Client) ExchangeOAuthCode(code string) (*OAuthLoginResult, error) {
 		Error     string `json:"error"`
 		ErrorDesc string `json:"error_description"`
 	}
-	if err := json.Unmarshal(body, &wrapper); err != nil {
+	if err := json.Unmarshal(respBytes, &wrapper); err != nil {
 		return nil, err
 	}
 	if wrapper.Error != "" {
