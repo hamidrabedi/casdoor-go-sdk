@@ -38,6 +38,23 @@ func (c *Client) SendSms(content string, receivers ...string) error {
 	return nil
 }
 
+func (c *Client) SendSmsWithTemplate(content, template string, receivers ...string) error {
+	form := smsForm{
+		Content:   content,
+		Receivers: receivers,
+	}
+	postBytes, err := json.Marshal(form)
+	if err != nil {
+		return err
+	}
+
+	queryMap := map[string]string{
+		"template": template,
+	}
+	_, err = c.DoPost("send-sms", queryMap, postBytes, false, false)
+	return err
+}
+
 func (c *Client) SendSmsByProvider(content string, provider string, receivers ...string) error {
 	form := smsForm{
 		Content:   content,

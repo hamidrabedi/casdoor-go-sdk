@@ -21,3 +21,7 @@ func SendSms(content string, receivers ...string) error {
 func SendSmsByProvider(content string, provider string, receivers ...string) error {
 	return globalClient.SendSmsByProvider(content, provider, receivers...)
 }
+
+func SendSmsWithTemplate(content, template string, receivers ...string) error {
+	return globalClient.SendSmsWithTemplate(content, template, receivers...)
+}
