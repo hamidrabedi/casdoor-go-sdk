@@ -17,8 +17,6 @@ package casdoorsdk
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 )
 
 // OAuthLoginResult includes OAuth tokens plus the IdP session id returned at login.
@@ -119,39 +117,11 @@ func (c *Client) SsoLogout(accessToken string, logoutAll bool) error {
 	if logoutAll {
 		logoutParam = "true"
 	}
-	logoutURL := fmt.Sprintf("%s/api/sso-logout?logoutAll=%s", c.Endpoint, logoutParam)
 
-	req, err := http.NewRequest(http.MethodPost, logoutURL, nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("%s", string(body))
-	}
-
-	var wrapper Response
-	if err := json.Unmarshal(body, &wrapper); err != nil {
-		return err
-	}
-	if wrapper.Status != "ok" {
-		if wrapper.Msg != "" {
-			return fmt.Errorf("%s", wrapper.Msg)
-		}
-		return fmt.Errorf("SSO logout failed")
-	}
-	return nil
+	_, err := c.DoPostWithHeaders("sso-logout", map[string]string{"logoutAll": logoutParam}, nil, map[string]string{
+		"Authorization": "Bearer " + accessToken,
+	})
+	return err
 }
 
 // LogoutUserCompletely deletes all IdP sessions (every application) and OAuth tokens for a user.

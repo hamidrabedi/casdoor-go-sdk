@@ -39,6 +39,10 @@ func DoPost(action string, queryMap map[string]string, postBytes []byte, isForm,
 	return globalClient.DoPost(action, queryMap, postBytes, isForm, isFile)
 }
 
+func DoPostWithHeaders(action string, queryMap map[string]string, postBytes []byte, headers map[string]string) (*Response, error) {
+	return globalClient.DoPostWithHeaders(action, queryMap, postBytes, headers)
+}
+
 // DoPostBytesRaw is a general function to post a request from url, body through HTTP Post method.
 func DoPostBytesRaw(url string, contentType string, body io.Reader) ([]byte, error) {
 	return globalClient.DoPostBytesRaw(url, contentType, body)

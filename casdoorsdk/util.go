@@ -182,28 +182,65 @@ func (c *Client) DoPost(action string, queryMap map[string]string, postBytes []b
 	return &response, nil
 }
 
+// DoPostWithHeaders posts to a Casdoor API action using custom headers instead of BasicAuth.
+// Used for endpoints authenticated by a bearer access token (e.g. sso-logout).
+func (c *Client) DoPostWithHeaders(action string, queryMap map[string]string, postBytes []byte, headers map[string]string) (*Response, error) {
+	url := c.GetUrl(action, queryMap)
+
+	var body io.Reader
+	if len(postBytes) > 0 {
+		body = bytes.NewReader(postBytes)
+	}
+
+	respBytes, err := c.postBytesRaw(url, "text/plain;charset=UTF-8", body, false, headers)
+	if err != nil {
+		return nil, err
+	}
+
+	var response Response
+	err = json.Unmarshal(respBytes, &response)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.Status != "ok" {
+		if response.Msg != "" {
+			return nil, fmt.Errorf(response.Msg)
+		}
+		return nil, fmt.Errorf("request failed")
+	}
+
+	return &response, nil
+}
+
 // DoPostBytesRaw is a general function to post a request from url, body through HTTP Post method.
 func (c *Client) DoPostBytesRaw(url string, contentType string, body io.Reader) ([]byte, error) {
+	return c.postBytesRaw(url, contentType, body, true, nil)
+}
+
+func (c *Client) postBytesRaw(url string, contentType string, body io.Reader, basicAuth bool, headers map[string]string) ([]byte, error) {
 	if contentType == "" {
 		contentType = "text/plain;charset=UTF-8"
 	}
-
-	var resp *http.Response
 
 	req, err := http.NewRequest("POST", url, body)
 	if err != nil {
 		return nil, err
 	}
 
-	req.SetBasicAuth(c.ClientId, c.ClientSecret)
+	if basicAuth {
+		req.SetBasicAuth(c.ClientId, c.ClientSecret)
+	}
 	req.Header.Set("Content-Type", contentType)
 
-	// Add custom headers
 	for key, value := range c.CustomHeaders {
 		req.Header.Set(key, value)
 	}
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
 
-	resp, err = client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
