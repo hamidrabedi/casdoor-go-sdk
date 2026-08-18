@@ -16,7 +16,6 @@ package casdoorsdk
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 type Ldap struct {
@@ -35,35 +34,39 @@ type Ldap struct {
 	Filter              string            `xorm:"varchar(200)" json:"filter"`
 	FilterFields        []string          `xorm:"varchar(100)" json:"filterFields"`
 	DefaultGroup        string            `xorm:"varchar(100)" json:"defaultGroup"`
+	DefaultGroups       []string          `xorm:"mediumtext" json:"defaultGroups"`
 	PasswordType        string            `xorm:"varchar(100)" json:"passwordType"`
 	CustomAttributes    map[string]string `json:"customAttributes"`
 
-	AutoSync int    `json:"autoSync"`
-	LastSync string `xorm:"varchar(100)" json:"lastSync"`
+	AutoSync     int    `json:"autoSync"`
+	LastSync     string `xorm:"varchar(100)" json:"lastSync"`
+	EnableGroups bool   `xorm:"bool" json:"enableGroups"`
 }
 
 type LdapUser struct {
-	UidNumber             string            `json:"uidNumber"`
-	Uid                   string            `json:"uid"`
-	Cn                    string            `json:"cn"`
-	GidNumber             string            `json:"gidNumber"`
-	Uuid                  string            `json:"uuid"`
-	UserPrincipalName     string            `json:"userPrincipalName"`
-	DisplayName           string            `json:"displayName"`
-	Mail                  string            `json:"mail"`
-	Email                 string            `json:"email"`
-	EmailAddress          string            `json:"emailAddress"`
-	TelephoneNumber       string            `json:"telephoneNumber"`
-	Mobile                string            `json:"mobile"`
-	MobileTelephoneNumber string            `json:"mobileTelephoneNumber"`
-	RegisteredAddress     string            `json:"registeredAddress"`
-	PostalAddress         string            `json:"postalAddress"`
-	Country               string            `json:"country"`
-	CountryName           string            `json:"countryName"`
-	GroupId               string            `json:"groupId"`
-	Address               string            `json:"address"`
-	MemberOf              string            `json:"memberOf"`
-	Attributes            map[string]string `json:"attributes"`
+	UidNumber string `json:"uidNumber"`
+	Uid       string `json:"uid"`
+	Cn        string `json:"cn"`
+	GidNumber string `json:"gidNumber"`
+	// Gcn                   string
+	Uuid                  string `json:"uuid"`
+	UserPrincipalName     string `json:"userPrincipalName"`
+	DisplayName           string `json:"displayName"`
+	Mail                  string
+	Email                 string `json:"email"`
+	EmailAddress          string
+	TelephoneNumber       string
+	Mobile                string `json:"mobile"`
+	MobileTelephoneNumber string
+	RegisteredAddress     string
+	PostalAddress         string
+	Country               string `json:"country"`
+	CountryName           string `json:"countryName"`
+
+	GroupId    string            `json:"groupId"`
+	Address    string            `json:"address"`
+	MemberOf   []string          `json:"memberOf"`
+	Attributes map[string]string `json:"attributes"`
 }
 
 type LdapUsersResponse struct {
@@ -98,7 +101,7 @@ func (c *Client) GetLdaps() ([]*Ldap, error) {
 
 func (c *Client) GetLdap(id string) (*Ldap, error) {
 	queryMap := map[string]string{
-		"id": fmt.Sprintf("%s/%s", "admin", id),
+		"id": getAdminId(id),
 	}
 
 	url := c.GetUrl("get-ldap", queryMap)
@@ -133,7 +136,7 @@ func (c *Client) UpdateLdap(ldap *Ldap) (bool, error) {
 
 func (c *Client) GetLdapUsers(id string) (*LdapUsersResponse, error) {
 	url := c.GetUrl("get-ldap-users", map[string]string{
-		"id": fmt.Sprintf("%s/%s", c.OrganizationName, id),
+		"id": c.GetId(id),
 	})
 
 	bytes, err := c.DoGetBytes(url)
@@ -151,7 +154,7 @@ func (c *Client) GetLdapUsers(id string) (*LdapUsersResponse, error) {
 
 func (c *Client) SyncLdapUsers(id string, users []*LdapUser) (*SyncLdapUsersResponse, error) {
 	queryMap := map[string]string{
-		"id": fmt.Sprintf("%s/%s", c.OrganizationName, id),
+		"id": c.GetId(id),
 	}
 
 	postBytes, err := json.Marshal(users)

@@ -16,7 +16,6 @@ package casdoorsdk
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 // Cert has the same definition as https://github.com/casdoor/casdoor/blob/master/object/cert.go#L24
@@ -32,10 +31,15 @@ type Cert struct {
 	BitSize         int    `json:"bitSize"`
 	ExpireInYears   int    `json:"expireInYears"`
 
-	Certificate            string `xorm:"mediumtext" json:"certificate"`
-	PrivateKey             string `xorm:"mediumtext" json:"privateKey"`
-	AuthorityPublicKey     string `xorm:"mediumtext" json:"authorityPublicKey"`
-	AuthorityRootPublicKey string `xorm:"mediumtext" json:"authorityRootPublicKey"`
+	ExpireTime       string `xorm:"varchar(100)" json:"expireTime"`
+	DomainExpireTime string `xorm:"varchar(100)" json:"domainExpireTime"`
+	Provider         string `xorm:"varchar(100)" json:"provider"`
+	Account          string `xorm:"varchar(100)" json:"account"`
+	AccessKey        string `xorm:"varchar(100)" json:"accessKey"`
+	AccessSecret     string `xorm:"varchar(100)" json:"accessSecret"`
+
+	Certificate string `xorm:"mediumtext" json:"certificate"`
+	PrivateKey  string `xorm:"mediumtext" json:"privateKey"`
 }
 
 func (c *Client) GetGlobalCerts() ([]*Cert, error) {
@@ -76,7 +80,7 @@ func (c *Client) GetCerts() ([]*Cert, error) {
 
 func (c *Client) GetCert(name string) (*Cert, error) {
 	queryMap := map[string]string{
-		"id": fmt.Sprintf("%s/%s", c.OrganizationName, name),
+		"id": c.GetId(name),
 	}
 
 	url := c.GetUrl("get-cert", queryMap)

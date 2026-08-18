@@ -17,7 +17,6 @@ package casdoorsdk
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
 )
 
@@ -40,6 +39,12 @@ type Permission struct {
 	Actions      []string `xorm:"mediumtext" json:"actions"`
 	Effect       string   `xorm:"varchar(100)" json:"effect"`
 	IsEnabled    bool     `json:"isEnabled"`
+
+	// ExpireTime is an optional RFC3339 timestamp. When set and reached, the permission
+	// is automatically revoked (its Casbin policies are removed and it is disabled) by the
+	// permission expiration job, providing time-limited access as required by standards
+	// such as ISO/IEC 27001 control 5.18. An empty value means the permission never expires.
+	ExpireTime string `xorm:"varchar(100)" json:"expireTime"`
 
 	Submitter   string `xorm:"varchar(100)" json:"submitter"`
 	Approver    string `xorm:"varchar(100)" json:"approver"`
@@ -69,7 +74,7 @@ func (c *Client) GetPermissions() ([]*Permission, error) {
 
 func (c *Client) GetPermissionsByRole(name string) ([]*Permission, error) {
 	queryMap := map[string]string{
-		"id": fmt.Sprintf("%s/%s", c.OrganizationName, name),
+		"id": c.GetId(name),
 	}
 
 	url := c.GetUrl("get-permissions-by-role", queryMap)
@@ -115,7 +120,7 @@ func (c *Client) GetPaginationPermissions(p int, pageSize int, queryMap map[stri
 
 func (c *Client) GetPermission(name string) (*Permission, error) {
 	queryMap := map[string]string{
-		"id": fmt.Sprintf("%s/%s", c.OrganizationName, name),
+		"id": c.GetId(name),
 	}
 
 	url := c.GetUrl("get-permission", queryMap)

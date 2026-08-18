@@ -17,7 +17,6 @@ package casdoorsdk
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
 )
 
@@ -27,18 +26,12 @@ type Pricing struct {
 	Name        string `xorm:"varchar(100) notnull pk" json:"name"`
 	CreatedTime string `xorm:"varchar(100)" json:"createdTime"`
 	DisplayName string `xorm:"varchar(100)" json:"displayName"`
-	Description string `xorm:"varchar(100)" json:"description"`
+	Description string `xorm:"mediumtext" json:"description"`
 
 	Plans         []string `xorm:"mediumtext" json:"plans"`
 	IsEnabled     bool     `json:"isEnabled"`
 	TrialDuration int      `json:"trialDuration"`
 	Application   string   `xorm:"varchar(100)" json:"application"`
-
-	Submitter   string `xorm:"varchar(100)" json:"submitter"`
-	Approver    string `xorm:"varchar(100)" json:"approver"`
-	ApproveTime string `xorm:"varchar(100)" json:"approveTime"`
-
-	State string `xorm:"varchar(100)" json:"state"`
 }
 
 func (c *Client) GetPricings() ([]*Pricing, error) {
@@ -89,7 +82,7 @@ func (c *Client) GetPaginationPricings(p int, pageSize int, queryMap map[string]
 
 func (c *Client) GetPricing(name string) (*Pricing, error) {
 	queryMap := map[string]string{
-		"id": fmt.Sprintf("%s/%s", c.OrganizationName, name),
+		"id": c.GetId(name),
 	}
 
 	url := c.GetUrl("get-pricing", queryMap)

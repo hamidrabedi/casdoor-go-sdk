@@ -17,7 +17,6 @@ package casdoorsdk
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
 )
 
@@ -35,6 +34,7 @@ type Plan struct {
 	Product          string   `xorm:"varchar(100)" json:"product"`
 	PaymentProviders []string `xorm:"varchar(100)" json:"paymentProviders"` // payment providers for related product
 	IsEnabled        bool     `json:"isEnabled"`
+	IsExclusive      bool     `json:"isExclusive"` // if true, a user can only have at most one subscription of this plan
 
 	Role    string   `xorm:"varchar(100)" json:"role"`
 	Options []string `xorm:"-" json:"options"`
@@ -88,7 +88,7 @@ func (c *Client) GetPaginationPlans(p int, pageSize int, queryMap map[string]str
 
 func (c *Client) GetPlan(name string) (*Plan, error) {
 	queryMap := map[string]string{
-		"id": fmt.Sprintf("%s/%s", c.OrganizationName, name),
+		"id": c.GetId(name),
 	}
 
 	url := c.GetUrl("get-plan", queryMap)

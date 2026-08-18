@@ -17,7 +17,6 @@ package casdoorsdk
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
 )
 
@@ -32,6 +31,8 @@ type Payment struct {
 	// Product Info
 	Products            []string `xorm:"varchar(1000)" json:"products"`
 	ProductsDisplayName string   `xorm:"varchar(1000)" json:"productsDisplayName"`
+	ProductName         string   `xorm:"varchar(1000)" json:"productName"`
+	ProductDisplayName  string   `xorm:"varchar(1000)" json:"productDisplayName"`
 	Detail              string   `xorm:"varchar(255)" json:"detail"`
 	Currency            string   `xorm:"varchar(100)" json:"currency"`
 	Price               float64  `json:"price"`
@@ -106,7 +107,7 @@ func (c *Client) GetPaginationPayments(p int, pageSize int, queryMap map[string]
 
 func (c *Client) GetPayment(name string) (*Payment, error) {
 	queryMap := map[string]string{
-		"id": fmt.Sprintf("%s/%s", c.OrganizationName, name),
+		"id": c.GetId(name),
 	}
 
 	url := c.GetUrl("get-payment", queryMap)

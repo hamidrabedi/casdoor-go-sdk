@@ -37,8 +37,38 @@ func (c *Client) GetUrl(action string, queryMap map[string]string) string {
 	return fmt.Sprintf("%s/api/%s?%s", c.Endpoint, action, query)
 }
 
+// GetId returns the Casdoor object ID ("owner/name") of an object owned by an
+// organization. If name is already a qualified "owner/name" ID, it is returned
+// as-is, so that a client can also address objects that live outside of its own
+// organization. Object names never contain a slash in Casdoor.
 func (c *Client) GetId(name string) string {
-	return c.OrganizationName + "/" + name
+	return getId(name, c.OrganizationName)
+}
+
+// getAdminId is GetId for the object types that are owned by "admin" instead of
+// by an organization: organization, application, token and LDAP server.
+func getAdminId(name string) string {
+	return getId(name, "admin")
+}
+
+func getId(name string, defaultOwner string) string {
+	if strings.Contains(name, "/") {
+		return name
+	}
+
+	return defaultOwner + "/" + name
+}
+
+// getOwner returns the owner of an object about to be sent to the server: the
+// one set by the caller, falling back to defaultOwner when the caller left it
+// empty. Callers must apply it before building the request ID, so that the ID
+// in the query string and the owner in the request body always agree.
+func getOwner(owner string, defaultOwner string) string {
+	if owner == "" {
+		return defaultOwner
+	}
+
+	return owner
 }
 
 func createFormFile(formData map[string][]byte) (string, io.Reader, error) {
@@ -46,7 +76,6 @@ func createFormFile(formData map[string][]byte) (string, io.Reader, error) {
 
 	body := new(bytes.Buffer)
 	w := multipart.NewWriter(body)
-	defer w.Close()
 
 	for k, v := range formData {
 		pw, err := w.CreateFormFile(k, "file")
@@ -58,6 +87,10 @@ func createFormFile(formData map[string][]byte) (string, io.Reader, error) {
 		if err != nil {
 			panic(err)
 		}
+	}
+
+	if err := w.Close(); err != nil {
+		return "", nil, err
 	}
 
 	return w.FormDataContentType(), body, nil
@@ -82,6 +115,18 @@ func GetCurrentTime() string {
 	timestamp := time.Now().Unix()
 	tm := time.Unix(timestamp, 0)
 	return tm.Format(time.RFC3339)
+}
+
+// setAuthHeader sets the "Authorization" header of the request. The user's access token is
+// used when the client has one, so that the API is called as the user instead of as the
+// application. Otherwise the application's client ID and client secret are used.
+func (c *Client) setAuthHeader(req *http.Request) {
+	if c.AccessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+c.AccessToken)
+		return
+	}
+
+	req.SetBasicAuth(c.ClientId, c.ClientSecret)
 }
 
 // DoGetResponse is a general function to get response from param url through HTTP Get method.
@@ -228,9 +273,7 @@ func (c *Client) postBytesRaw(url string, contentType string, body io.Reader, ba
 		return nil, err
 	}
 
-	if basicAuth {
-		req.SetBasicAuth(c.ClientId, c.ClientSecret)
-	}
+	c.setAuthHeader(req)
 	req.Header.Set("Content-Type", contentType)
 
 	for key, value := range c.CustomHeaders {
@@ -270,7 +313,7 @@ func (c *Client) doGetBytesRawWithoutCheck(url string) ([]byte, error) {
 		return nil, err
 	}
 
-	req.SetBasicAuth(c.ClientId, c.ClientSecret)
+	c.setAuthHeader(req)
 
 	// Add custom headers
 	for key, value := range c.CustomHeaders {

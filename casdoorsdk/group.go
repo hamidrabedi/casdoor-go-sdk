@@ -17,7 +17,6 @@ package casdoorsdk
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
 )
 
@@ -32,14 +31,17 @@ type Group struct {
 	ContactEmail string   `xorm:"varchar(100)" json:"contactEmail"`
 	Type         string   `xorm:"varchar(100)" json:"type"`
 	ParentId     string   `xorm:"varchar(100)" json:"parentId"`
+	ParentName   string   `xorm:"-" json:"parentName"`
 	IsTopGroup   bool     `xorm:"bool" json:"isTopGroup"`
-	Users        []string `xorm:"mediumtext" json:"users"`
+	Users        []string `xorm:"-" json:"users"`
 
-	Title    string   `json:"title,omitempty"`
-	Key      string   `json:"key,omitempty"`
-	Children []*Group `json:"children,omitempty"`
+	Title        string   `json:"title,omitempty"`
+	Key          string   `json:"key,omitempty"`
+	HaveChildren bool     `xorm:"-" json:"haveChildren"`
+	Children     []*Group `json:"children,omitempty"`
 
-	IsEnabled bool `json:"isEnabled"`
+	IsEnabled  bool              `json:"isEnabled"`
+	Properties map[string]string `xorm:"mediumtext" json:"properties"`
 }
 
 func (c *Client) GetGroups() ([]*Group, error) {
@@ -90,7 +92,7 @@ func (c *Client) GetPaginationGroups(p int, pageSize int, queryMap map[string]st
 
 func (c *Client) GetGroup(name string) (*Group, error) {
 	queryMap := map[string]string{
-		"id": fmt.Sprintf("%s/%s", c.OrganizationName, name),
+		"id": c.GetId(name),
 	}
 
 	url := c.GetUrl("get-group", queryMap)

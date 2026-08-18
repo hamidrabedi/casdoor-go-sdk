@@ -43,11 +43,16 @@ type Order struct {
 	// Order State
 	State   string `xorm:"varchar(100)" json:"state"`
 	Message string `xorm:"varchar(2000)" json:"message"`
+
+	// Coupon Info
+	CouponName     string  `xorm:"varchar(100)" json:"couponName"`
+	CouponDiscount float64 `json:"couponDiscount"` // Discount amount applied by coupon
 }
 
 type ProductInfo struct {
 	Owner       string  `json:"owner"`
 	Name        string  `json:"name"`
+	CreatedTime string  `json:"createdTime,omitempty"`
 	DisplayName string  `json:"displayName"`
 	Image       string  `json:"image,omitempty"`
 	Detail      string  `json:"detail,omitempty"`
@@ -126,7 +131,7 @@ func (c *Client) GetUserOrders(userName string) ([]*Order, error) {
 
 func (c *Client) GetOrder(name string) (*Order, error) {
 	queryMap := map[string]string{
-		"id": fmt.Sprintf("%s/%s", c.OrganizationName, name),
+		"id": c.GetId(name),
 	}
 
 	url := c.GetUrl("get-order", queryMap)
@@ -160,7 +165,7 @@ func (c *Client) DeleteOrder(order *Order) (bool, error) {
 
 func (c *Client) CancelOrder(name string) (bool, error) {
 	queryMap := map[string]string{
-		"id": fmt.Sprintf("%s/%s", c.OrganizationName, name),
+		"id": c.GetId(name),
 	}
 
 	resp, err := c.DoPost("cancel-order", queryMap, []byte(""), false, false)

@@ -13,8 +13,8 @@
 </p>
 
 <p align="center">
-  <a href="https://goreportcard.com/report/github.com/casdoor/casdoor-go-sdk">
-    <img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/casdoor/casdoor-go-sdk?style=flat-square">
+  <a href="https://github.com/casdoor/casdoor-go-sdk/actions/workflows/ci.yml">
+    <img alt="golangci-lint" src="https://github.com/casdoor/casdoor-go-sdk/actions/workflows/ci.yml/badge.svg">
   </a>
   <a href="https://github.com/casdoor/casdoor-go-sdk/blob/master/LICENSE">
     <img src="https://img.shields.io/github/license/casdoor/casdoor-go-sdk?style=flat-square" alt="license">
@@ -287,6 +287,44 @@ if err != nil {
 }
 ```
 
+### Calling APIs With the User's Access Token
+
+By default, the SDK calls the Casdoor APIs as the application itself, i.e., it authenticates
+with the client ID and client secret, so the calls have the application's (admin) permissions.
+
+If you want to call the APIs on behalf of the signed-in user instead, use `WithAccessToken()`
+with the access token returned by `GetOAuthToken()`. It returns a new client that sends the
+`Authorization: Bearer <access_token>` header, so Casdoor treats the request as being made by
+that user, and the user's own permissions apply:
+
+```go
+token, err := casdoorsdk.GetOAuthToken(code, state)
+if err != nil {
+    panic(err)
+}
+
+// Create a client that acts as the user who owns the access token
+userClient := casdoorsdk.WithAccessToken(token.AccessToken)
+
+// Get the user of the access token, i.e., "who am I"
+user, err := userClient.GetAccount()
+
+// Any other API can be called in the same way
+users, err := userClient.GetUsers()
+```
+
+The original client (or the global client) is not affected, so it's safe to create one such
+client per incoming HTTP request. A client created by `NewClient()` works the same way:
+
+```go
+client := casdoorsdk.NewClient(endpoint, clientId, clientSecret, certificate, organizationName, applicationName)
+user, err := client.WithAccessToken(accessToken).GetAccount()
+```
+
+**Note**: a non-admin user can only access their own data. If an API returns a permission
+error, the user simply isn't allowed to call it — use the application's client (without
+`WithAccessToken()`) for admin operations.
+
 ### JWT Token Parsing
 
 Parse and validate JWT tokens:
@@ -306,6 +344,39 @@ fmt.Printf("Organization: %s\n", claims.Owner)
 ## 📦 Resource Management
 
 The SDK provides comprehensive APIs to manage various resources in Casdoor.
+
+### Object Owner
+
+Every object in Casdoor is identified by an ID of the form `owner/name`, where the owner is
+an organization (`role`, `group`, `user`, `product`, ...) or the built-in `admin` owner
+(`organization`, `application`, `token`, `ldap`).
+
+By default the SDK fills in the owner for you: the `organizationName` passed to
+`InitConfig()` / `NewClient()`, or `admin` for the object types listed above. You can address
+an object in another organization by passing a qualified `owner/name` ID instead of a plain
+name, and by setting the `Owner` field explicitly when creating or updating an object:
+
+```go
+// Uses the client's own organization: "my-org/my-role"
+role, err := casdoorsdk.GetRole("my-role")
+
+// Uses the owner given in the name: "other-org/my-role"
+role, err := casdoorsdk.GetRole("other-org/my-role")
+
+// Created in "other-org" instead of the client's organization
+_, err := casdoorsdk.AddRole(&casdoorsdk.Role{
+    Owner: "other-org",
+    Name:  "my-role",
+})
+```
+
+> [!IMPORTANT]
+> **Behavior change:** `Add{Resource}()`, `Update{Resource}()` and `Delete{Resource}()` used to
+> overwrite the `Owner` field of the object with the client's organization, and to ignore any
+> owner set by the caller. They now only fill `Owner` in when it is empty. If your code sets
+> `Owner` to a value other than the client's organization (for example the literal `"admin"`),
+> the request is now sent to that owner instead of being silently redirected, so clear the
+> field or set it to the intended organization.
 
 ### User Management
 

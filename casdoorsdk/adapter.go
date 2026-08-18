@@ -17,7 +17,6 @@ package casdoorsdk
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
 )
 
@@ -26,18 +25,15 @@ type Adapter struct {
 	Name        string `xorm:"varchar(100) notnull pk" json:"name"`
 	CreatedTime string `xorm:"varchar(100)" json:"createdTime"`
 
-	UseSameDb       bool   `json:"useSameDb"`
-	Type            string `xorm:"varchar(100)" json:"type"`
-	DatabaseType    string `xorm:"varchar(100)" json:"databaseType"`
-	Host            string `xorm:"varchar(100)" json:"host"`
-	Port            int    `json:"port"`
-	User            string `xorm:"varchar(100)" json:"user"`
-	Password        string `xorm:"varchar(100)" json:"password"`
-	Database        string `xorm:"varchar(100)" json:"database"`
-	Table           string `xorm:"varchar(100)" json:"table"`
-	TableNamePrefix string `xorm:"varchar(100)" json:"tableNamePrefix"`
-
-	IsEnabled bool `json:"isEnabled"`
+	Table        string `xorm:"varchar(100)" json:"table"`
+	UseSameDb    bool   `json:"useSameDb"`
+	Type         string `xorm:"varchar(100)" json:"type"`
+	DatabaseType string `xorm:"varchar(100)" json:"databaseType"`
+	Host         string `xorm:"varchar(100)" json:"host"`
+	Port         int    `json:"port"`
+	User         string `xorm:"varchar(100)" json:"user"`
+	Password     string `xorm:"varchar(150)" json:"password"`
+	Database     string `xorm:"varchar(100)" json:"database"`
 
 	//*xormadapter.Adapter `xorm:"-" json:"-"`
 }
@@ -90,7 +86,7 @@ func (c *Client) GetPaginationAdapters(p int, pageSize int, queryMap map[string]
 
 func (c *Client) GetAdapter(name string) (*Adapter, error) {
 	queryMap := map[string]string{
-		"id": fmt.Sprintf("%s/%s", c.OrganizationName, name),
+		"id": c.GetId(name),
 	}
 
 	url := c.GetUrl("get-adapter", queryMap)

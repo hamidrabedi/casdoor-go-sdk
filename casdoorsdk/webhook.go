@@ -17,7 +17,6 @@ package casdoorsdk
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
 )
 
@@ -44,6 +43,11 @@ type Webhook struct {
 	IsUserExtended bool      `json:"isUserExtended"`
 	SingleOrgOnly  bool      `json:"singleOrgOnly"`
 	IsEnabled      bool      `json:"isEnabled"`
+
+	// Retry configuration
+	MaxRetries            int  `xorm:"int default 3" json:"maxRetries"`
+	RetryInterval         int  `xorm:"int default 60" json:"retryInterval"` // seconds
+	UseExponentialBackoff bool `json:"useExponentialBackoff"`
 }
 
 func (c *Client) GetWebhooks() ([]*Webhook, error) {
@@ -94,7 +98,7 @@ func (c *Client) GetPaginationWebhooks(p int, pageSize int, queryMap map[string]
 
 func (c *Client) GetWebhook(name string) (*Webhook, error) {
 	queryMap := map[string]string{
-		"id": fmt.Sprintf("%s/%s", c.OrganizationName, name),
+		"id": c.GetId(name),
 	}
 
 	url := c.GetUrl("get-webhook", queryMap)

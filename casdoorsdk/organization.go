@@ -16,7 +16,6 @@ package casdoorsdk
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 type AccountItem struct {
@@ -25,6 +24,7 @@ type AccountItem struct {
 	ViewRule   string `json:"viewRule"`
 	ModifyRule string `json:"modifyRule"`
 	Regex      string `json:"regex"`
+	Tab        string `json:"tab"`
 }
 
 type ThemeData struct {
@@ -58,9 +58,13 @@ type Organization struct {
 	PasswordObfuscatorType string     `xorm:"varchar(100)" json:"passwordObfuscatorType"`
 	PasswordObfuscatorKey  string     `xorm:"varchar(100)" json:"passwordObfuscatorKey"`
 	PasswordExpireDays     int        `json:"passwordExpireDays"`
+	TokenRetentionDays     int        `json:"tokenRetentionDays"`
+	RecordRetentionDays    int        `json:"recordRetentionDays"`
 	CountryCodes           []string   `xorm:"mediumtext"  json:"countryCodes"`
 	DefaultAvatar          string     `xorm:"varchar(200)" json:"defaultAvatar"`
+	UsePermanentAvatar     bool       `xorm:"bool" json:"usePermanentAvatar"`
 	DefaultApplication     string     `xorm:"varchar(100)" json:"defaultApplication"`
+	DefaultTokenFormat     string     `xorm:"varchar(100)" json:"defaultTokenFormat"`
 	UserTypes              []string   `xorm:"mediumtext" json:"userTypes"`
 	Tags                   []string   `xorm:"mediumtext" json:"tags"`
 	Languages              []string   `xorm:"varchar(255)" json:"languages"`
@@ -82,7 +86,17 @@ type Organization struct {
 
 	MfaItems           []*MfaItem     `xorm:"varchar(300)" json:"mfaItems"`
 	MfaRememberInHours int            `json:"mfaRememberInHours"`
+	AccountMenu        string         `xorm:"varchar(20)" json:"accountMenu"`
 	AccountItems       []*AccountItem `xorm:"mediumtext" json:"accountItems"`
+
+	DcrPolicy string `xorm:"varchar(100)" json:"dcrPolicy"`
+
+	LdapAttributes []string `xorm:"mediumtext" json:"ldapAttributes"`
+
+	KerberosRealm       string `xorm:"varchar(200)" json:"kerberosRealm"`
+	KerberosKdcHost     string `xorm:"varchar(200)" json:"kerberosKdcHost"`
+	KerberosKeytab      string `xorm:"mediumtext" json:"kerberosKeytab"`
+	KerberosServiceName string `xorm:"varchar(100)" json:"kerberosServiceName"`
 
 	OrgBalance      float64 `json:"orgBalance"`
 	UserBalance     float64 `json:"userBalance"`
@@ -92,7 +106,7 @@ type Organization struct {
 
 func (c *Client) GetOrganization(name string) (*Organization, error) {
 	queryMap := map[string]string{
-		"id": fmt.Sprintf("%s/%s", "admin", name),
+		"id": getAdminId(name),
 	}
 
 	url := c.GetUrl("get-organization", queryMap)

@@ -16,20 +16,28 @@ package casdoorsdk
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 type ProviderItem struct {
 	Owner string `json:"owner"`
 	Name  string `json:"name"`
 
-	CanSignUp bool      `json:"canSignUp"`
-	CanSignIn bool      `json:"canSignIn"`
-	CanUnlink bool      `json:"canUnlink"`
-	Prompted  bool      `json:"prompted"`
-	AlertType string    `json:"alertType"`
-	Rule      string    `json:"rule"`
-	Provider  *Provider `json:"provider"`
+	CanSignUp    bool      `json:"canSignUp"`
+	CanSignIn    bool      `json:"canSignIn"`
+	CanUnlink    bool      `json:"canUnlink"`
+	BindingRule  *[]string `json:"bindingRule"`
+	CountryCodes []string  `json:"countryCodes"`
+	Prompted     bool      `json:"prompted"`
+	SignupGroup  string    `json:"signupGroup"`
+	Rule         string    `json:"rule"`
+	Provider     *Provider `json:"provider"`
+}
+
+type ScopeItem struct {
+	Name        string   `json:"name"`
+	DisplayName string   `json:"displayName"`
+	Description string   `json:"description"`
+	Tools       []string `json:"tools"` // MCP tools allowed by this scope
 }
 
 type SignupItem struct {
@@ -69,9 +77,10 @@ type SamlItem struct {
 }
 
 type JwtItem struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
-	Type  string `json:"type"`
+	Name     string `json:"name"`
+	Category string `json:"category"`
+	Value    string `json:"value"`
+	Type     string `json:"type"`
 }
 
 // Application has the same definition as https://github.com/casdoor/casdoor/blob/master/object/application.go#L61
@@ -81,18 +90,24 @@ type Application struct {
 	CreatedTime string `xorm:"varchar(100)" json:"createdTime"`
 
 	DisplayName                  string          `xorm:"varchar(100)" json:"displayName"`
+	Category                     string          `xorm:"varchar(20)" json:"category"`
+	Type                         string          `xorm:"varchar(20)" json:"type"`
+	Scopes                       []*ScopeItem    `xorm:"mediumtext" json:"scopes"`
 	Logo                         string          `xorm:"varchar(200)" json:"logo"`
 	Title                        string          `xorm:"varchar(100)" json:"title"`
 	Favicon                      string          `xorm:"varchar(200)" json:"favicon"`
 	Order                        int             `json:"order"`
 	HomepageUrl                  string          `xorm:"varchar(100)" json:"homepageUrl"`
-	Description                  string          `xorm:"varchar(100)" json:"description"`
+	Description                  string          `xorm:"mediumtext" json:"description"`
 	Organization                 string          `xorm:"varchar(100)" json:"organization"`
 	Cert                         string          `xorm:"varchar(100)" json:"cert"`
 	DefaultGroup                 string          `xorm:"varchar(100)" json:"defaultGroup"`
+	DefaultTag                   string          `xorm:"varchar(100)" json:"defaultTag"`
 	HeaderHtml                   string          `xorm:"mediumtext" json:"headerHtml"`
+	PageHtml                     string          `xorm:"mediumtext" json:"pageHtml"`
 	EnablePassword               bool            `json:"enablePassword"`
 	EnableSignUp                 bool            `json:"enableSignUp"`
+	EnableGuestSignin            bool            `json:"enableGuestSignin"`
 	DisableSignin                bool            `json:"disableSignin"`
 	EnableSigninSession          bool            `json:"enableSigninSession"`
 	EnableAutoSignin             bool            `json:"enableAutoSignin"`
@@ -118,11 +133,13 @@ type Application struct {
 	Tags                         []string        `xorm:"mediumtext" json:"tags"`
 	SamlAttributes               []*SamlItem     `xorm:"varchar(1000)" json:"samlAttributes"`
 	SamlHashAlgorithm            string          `xorm:"varchar(20)" json:"samlHashAlgorithm"`
+	SamlC14nPrefix               string          `xorm:"varchar(100)" json:"samlC14nPrefix"`
 	IsShared                     bool            `json:"isShared"`
 	IpRestriction                string          `json:"ipRestriction"`
 
 	ClientId                string     `xorm:"varchar(100)" json:"clientId"`
 	ClientSecret            string     `xorm:"varchar(100)" json:"clientSecret"`
+	ClientCert              string     `xorm:"varchar(100)" json:"clientCert"`
 	RedirectUris            []string   `xorm:"varchar(1000)" json:"redirectUris"`
 	BackchannelLogoutUri    string     `xorm:"varchar(500)" json:"backchannelLogoutUri"`
 	ForcedRedirectOrigin    string     `xorm:"varchar(100)" json:"forcedRedirectOrigin"`
@@ -154,7 +171,18 @@ type Application struct {
 	FailedSigninFrozenTime int `json:"failedSigninFrozenTime"`
 	CodeResendTimeout      int `json:"codeResendTimeout"`
 
-	CertObj *Cert `xorm:"-" json:"certObj"`
+	CustomScopes []*ScopeDescription `xorm:"mediumtext" json:"customScopes"`
+
+	// Reverse proxy fields
+	Domain       string   `xorm:"varchar(100)" json:"domain"`
+	OtherDomains []string `xorm:"varchar(1000)" json:"otherDomains"`
+	UpstreamHost string   `xorm:"varchar(100)" json:"upstreamHost"`
+	SslMode      string   `xorm:"varchar(100)" json:"sslMode"`
+	SslCert      string   `xorm:"varchar(100)" json:"sslCert"`
+
+	CertObj *Cert `xorm:"-"`
+
+	RegistrationAccessToken string `xorm:"varchar(100)" json:"registrationAccessToken"`
 }
 
 func (c *Client) GetApplications() ([]*Application, error) {
@@ -200,7 +228,7 @@ func (c *Client) GetOrganizationApplications() ([]*Application, error) {
 
 func (c *Client) GetApplication(name string) (*Application, error) {
 	queryMap := map[string]string{
-		"id": fmt.Sprintf("%s/%s", "admin", name),
+		"id": getAdminId(name),
 	}
 
 	url := c.GetUrl("get-application", queryMap)
