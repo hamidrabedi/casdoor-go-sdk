@@ -33,7 +33,7 @@
   </a>
 </p>
 
-Casdoor Go SDK is the official Go client library for [Casdoor](https://casdoor.org/), which allows you to easily integrate Casdoor authentication and authorization into your Go applications. This SDK provides a comprehensive set of APIs to interact with Casdoor server, enabling you to manage users, organizations, applications, roles, permissions, and much more.
+Casdoor Go SDK is the official Go client library for [Casdoor](https://casdoor.ai/), which allows you to easily integrate Casdoor authentication and authorization into your Go applications. This SDK provides a comprehensive set of APIs to interact with Casdoor server, enabling you to manage users, organizations, applications, roles, permissions, and much more.
 
 ## 📋 Table of Contents
 
@@ -348,8 +348,8 @@ The SDK provides comprehensive APIs to manage various resources in Casdoor.
 ### Object Owner
 
 Every object in Casdoor is identified by an ID of the form `owner/name`, where the owner is
-an organization (`role`, `group`, `user`, `product`, ...) or the built-in `admin` owner
-(`organization`, `application`, `token`, `ldap`).
+an organization (`role`, `group`, `user`, `product`, `ldap`, ...) or the built-in `admin` owner
+(`organization`, `application`, `token`).
 
 By default the SDK fills in the owner for you: the `organizationName` passed to
 `InitConfig()` / `NewClient()`, or `admin` for the object types listed above. You can address
@@ -621,6 +621,21 @@ success, resource, err := casdoorsdk.UploadResource(
 success, err := casdoorsdk.DeleteResource(resource)
 ```
 
+### Record Management
+
+Records are the audit logs of Casdoor. Any client can add a record, but reading the records needs
+the access token of an admin user:
+
+```go
+// Add a record
+success, err := casdoorsdk.AddRecord(&casdoorsdk.Record{Action: "my-action", User: "alice"})
+
+// Read the records as an admin user
+adminClient := casdoorsdk.WithAccessToken(adminAccessToken)
+records, err := adminClient.GetRecords()
+record, err := adminClient.GetRecord("record-name")
+```
+
 ### Webhook Management
 
 ```go
@@ -810,7 +825,7 @@ func main() {
 
 For more detailed information, please refer to:
 
-- [Casdoor Official Documentation](https://casdoor.org/docs/overview)
+- [Casdoor Official Documentation](https://casdoor.ai/docs/overview/)
 - [Casdoor GitHub Repository](https://github.com/casdoor/casdoor)
 - [API Documentation](https://door.casdoor.com/swagger)
 - [GoDoc Reference](https://pkg.go.dev/github.com/casdoor/casdoor-go-sdk/casdoorsdk)

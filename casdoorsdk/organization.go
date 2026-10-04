@@ -58,6 +58,7 @@ type Organization struct {
 	PasswordObfuscatorType string     `xorm:"varchar(100)" json:"passwordObfuscatorType"`
 	PasswordObfuscatorKey  string     `xorm:"varchar(100)" json:"passwordObfuscatorKey"`
 	PasswordExpireDays     int        `json:"passwordExpireDays"`
+	PasswordHistoryCount   int        `json:"passwordHistoryCount"`
 	TokenRetentionDays     int        `json:"tokenRetentionDays"`
 	RecordRetentionDays    int        `json:"recordRetentionDays"`
 	CountryCodes           []string   `xorm:"mediumtext"  json:"countryCodes"`
@@ -65,6 +66,7 @@ type Organization struct {
 	UsePermanentAvatar     bool       `xorm:"bool" json:"usePermanentAvatar"`
 	DefaultApplication     string     `xorm:"varchar(100)" json:"defaultApplication"`
 	DefaultTokenFormat     string     `xorm:"varchar(100)" json:"defaultTokenFormat"`
+	DefaultTokenFields     []string   `xorm:"varchar(1000)" json:"defaultTokenFields"`
 	UserTypes              []string   `xorm:"mediumtext" json:"userTypes"`
 	Tags                   []string   `xorm:"mediumtext" json:"tags"`
 	Languages              []string   `xorm:"varchar(255)" json:"languages"`
@@ -79,6 +81,8 @@ type Organization struct {
 	UseEmailAsUsername     bool       `json:"useEmailAsUsername"`
 	EnableTour             bool       `json:"enableTour"`
 	DisableSignin          bool       `json:"disableSignin"`
+	EnableExclusiveSignin  bool       `json:"enableExclusiveSignin"`
+	MaxSessions            int        `json:"maxSessions"`
 	DisableConsole         bool       `json:"disableConsole"`
 	IpRestriction          string     `json:"ipRestriction"`
 	NavItems               []string   `xorm:"mediumtext" json:"navItems"`
@@ -127,7 +131,7 @@ func (c *Client) GetOrganization(name string) (*Organization, error) {
 
 func (c *Client) GetOrganizations() ([]*Organization, error) {
 	queryMap := map[string]string{
-		"owner": c.OrganizationName,
+		"owner": "admin",
 	}
 
 	url := c.GetUrl("get-organizations", queryMap)
@@ -147,7 +151,7 @@ func (c *Client) GetOrganizations() ([]*Organization, error) {
 
 func (c *Client) GetOrganizationNames() ([]*Organization, error) {
 	queryMap := map[string]string{
-		"owner": c.OrganizationName,
+		"owner": "admin",
 	}
 
 	url := c.GetUrl("get-organization-names", queryMap)
