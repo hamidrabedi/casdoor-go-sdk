@@ -152,6 +152,28 @@ func (c *Client) DeleteInvitation(invitation *Invitation) (bool, error) {
 	return affected, err
 }
 
+// SendInvitation sends the invitation, which is in the organization of the client, to the
+// destinations by email. The email is sent by the "Invitation" email provider of the
+// application of the invitation, and the code and the link of the invitation are put in the
+// content of the email. Only an admin is allowed to.
+func (c *Client) SendInvitation(name string, destinations []string) (bool, error) {
+	queryMap := map[string]string{
+		"id": c.GetId(name),
+	}
+
+	postBytes, err := json.Marshal(destinations)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := c.DoPost("send-invitation", queryMap, postBytes, false, false)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.Status == "ok", nil
+}
+
 func (i Invitation) GetId() string {
 	return fmt.Sprintf("%s/%s", i.Owner, i.Name)
 }

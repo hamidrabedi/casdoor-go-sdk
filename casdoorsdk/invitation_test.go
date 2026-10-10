@@ -15,6 +15,12 @@
 package casdoorsdk
 
 import (
+	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
@@ -97,5 +103,82 @@ func TestInvitation(t *testing.T) {
 	deletedInvitation, err := GetInvitation(name)
 	if err == nil && deletedInvitation != nil {
 		t.Fatalf("Failed to delete invitation, it still exists")
+	}
+}
+
+func TestSendInvitationRequest(t *testing.T) {
+	var gotPath, gotId string
+	var gotDestinations []string
+	response := `{"status":"ok","msg":""}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotId = r.URL.Query().Get("id")
+
+		body, _ := io.ReadAll(r.Body)
+		if err := json.Unmarshal(body, &gotDestinations); err != nil {
+			t.Errorf("Failed to parse the body %q: %v", body, err)
+		}
+
+		_, _ = w.Write([]byte(response))
+	}))
+	defer server.Close()
+
+	c := NewClient(server.URL, "clientId", "clientSecret", "", "casbin", "app")
+
+	destinations := []string{"a@example.com", "b@example.com"}
+	ok, err := c.SendInvitation("invitation1", destinations)
+	if err != nil {
+		t.Fatalf("Failed to send invitation: %v", err)
+	}
+	if !ok {
+		t.Fatalf("Expected the invitation to be sent")
+	}
+	if gotPath != "/api/send-invitation" || gotId != "casbin/invitation1" || !reflect.DeepEqual(gotDestinations, destinations) {
+		t.Fatalf("Unexpected request: path=%s id=%s destinations=%v", gotPath, gotId, gotDestinations)
+	}
+
+	response = `{"status":"error","msg":"mail failed"}`
+	ok, err = c.SendInvitation("invitation1", destinations)
+	if err == nil || err.Error() != "mail failed" || ok {
+		t.Fatalf("Expected the error from Casdoor, got %v and %v", ok, err)
+	}
+}
+
+func TestSendInvitation(t *testing.T) {
+	InitConfig(TestCasdoorEndpoint, TestClientId, TestClientSecret, TestJwtPublicKey, TestCasdoorOrganization, TestCasdoorApplication)
+
+	// the invitation doesn't exist
+	_, err := SendInvitation(getRandomName("not_exist"), []string{"test@example.com"})
+	if err == nil || !strings.Contains(err.Error(), "does not exist") {
+		t.Fatalf("Expected the invitation to not exist, got %v", err)
+	}
+
+	// the invitation exists, so Casdoor goes on to send the email, which can't be delivered by
+	// the unreachable SMTP server of the test application
+	name := getRandomName("unit_test_invitation")
+	invitation := &Invitation{
+		Owner:       TestCasdoorOrganization,
+		Name:        name,
+		CreatedTime: time.Now().Format(time.RFC3339),
+		Code:        "SENDCODE1234",
+		DefaultCode: "SENDCODE1234",
+		Quota:       1,
+		Application: TestCasdoorApplication,
+		State:       "Active",
+	}
+	if _, err = AddInvitation(invitation); err != nil {
+		t.Fatalf("Failed to add invitation: %v", err)
+	}
+	defer func() {
+		_, _ = DeleteInvitation(invitation)
+	}()
+
+	ok, err := SendInvitation(name, []string{"test@example.com"})
+	if err == nil || ok {
+		t.Fatalf("Expected the email to fail, got %v and %v", ok, err)
+	}
+	if strings.Contains(err.Error(), "does not exist") {
+		t.Fatalf("Expected the invitation to be found, got %v", err)
 	}
 }
