@@ -66,6 +66,7 @@ type Provider struct {
 	Metadata               string `xorm:"mediumtext" json:"metadata"`
 	IdP                    string `xorm:"mediumtext" json:"idP"`
 	IssuerUrl              string `xorm:"varchar(100)" json:"issuerUrl"`
+	BodyTemplate           string `xorm:"mediumtext" json:"bodyTemplate"`
 	EnableSignAuthnRequest bool   `json:"enableSignAuthnRequest"`
 	EmailRegex             string `xorm:"varchar(200)" json:"emailRegex"`
 
