@@ -75,8 +75,16 @@ func AddUser(user *User) (bool, error) {
 	return globalClient.AddUser(user)
 }
 
+func RemoveUserFromGroup(owner string, name string, groupName string) (bool, error) {
+	return globalClient.RemoveUserFromGroup(owner, name, groupName)
+}
+
 func DeleteUser(user *User) (bool, error) {
 	return globalClient.DeleteUser(user)
+}
+
+func UploadUsers(fileBytes []byte) (bool, error) {
+	return globalClient.UploadUsers(fileBytes)
 }
 
 func CheckUserPassword(user *User) (bool, error) {
