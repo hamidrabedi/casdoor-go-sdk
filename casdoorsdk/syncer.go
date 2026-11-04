@@ -39,6 +39,9 @@ type Syncer struct {
 	Type         string `xorm:"varchar(100)" json:"type"`
 	DatabaseType string `xorm:"varchar(100)" json:"databaseType"`
 	SslMode      string `xorm:"varchar(100)" json:"sslMode"`
+	SslRootCert  string `xorm:"mediumtext" json:"sslRootCert"`
+	SslCert      string `xorm:"mediumtext" json:"sslCert"`
+	SslKey       string `xorm:"mediumtext" json:"sslKey"`
 	SshType      string `xorm:"varchar(100)" json:"sshType"`
 
 	Host             string         `xorm:"varchar(100)" json:"host"`
@@ -49,6 +52,7 @@ type Syncer struct {
 	SshPort          int            `json:"sshPort"`
 	SshUser          string         `xorm:"varchar(100)" json:"sshUser"`
 	SshPassword      string         `xorm:"varchar(150)" json:"sshPassword"`
+	SshHostKey       string         `xorm:"varchar(1000)" json:"sshHostKey"`
 	Cert             string         `xorm:"varchar(100)" json:"cert"`
 	Database         string         `xorm:"varchar(100)" json:"database"`
 	Table            string         `xorm:"varchar(100)" json:"table"`
@@ -59,6 +63,7 @@ type Syncer struct {
 	SyncInterval     int            `json:"syncInterval"`
 	IsReadOnly       bool           `json:"isReadOnly"`
 	IsEnabled        bool           `json:"isEnabled"`
+	LastSyncTime     string         `xorm:"varchar(100)" json:"lastSyncTime"`
 
 	// Ormer *Ormer `xorm:"-" json:"-"`
 }

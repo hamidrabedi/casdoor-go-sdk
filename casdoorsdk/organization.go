@@ -27,6 +27,15 @@ type AccountItem struct {
 	Tab        string `json:"tab"`
 }
 
+// FederatedCredential trusts tokens signed by an external issuer for a user of the organization
+type FederatedCredential struct {
+	Issuer   string `json:"issuer"`
+	JwksUri  string `json:"jwksUri"`
+	Subject  string `json:"subject"`
+	Audience string `json:"audience"`
+	User     string `json:"user"`
+}
+
 type ThemeData struct {
 	ThemeType    string `xorm:"varchar(30)" json:"themeType"`
 	ColorPrimary string `xorm:"varchar(10)" json:"colorPrimary"`
@@ -75,9 +84,11 @@ type Organization struct {
 	DefaultPassword        string     `xorm:"varchar(200)" json:"defaultPassword"`
 	MasterVerificationCode string     `xorm:"varchar(100)" json:"masterVerificationCode"`
 	IpWhitelist            string     `xorm:"varchar(200)" json:"ipWhitelist"`
+	TrustedDbHosts         string     `xorm:"varchar(500)" json:"trustedDbHosts"`
 	InitScore              int        `json:"initScore"`
 	EnableSoftDeletion     bool       `json:"enableSoftDeletion"`
 	IsProfilePublic        bool       `json:"isProfilePublic"`
+	UseOrganizationIssuer  bool       `json:"useOrganizationIssuer"`
 	UseEmailAsUsername     bool       `json:"useEmailAsUsername"`
 	EnableTour             bool       `json:"enableTour"`
 	DisableSignin          bool       `json:"disableSignin"`
@@ -96,7 +107,12 @@ type Organization struct {
 
 	DcrPolicy string `xorm:"varchar(100)" json:"dcrPolicy"`
 
-	LdapAttributes []string `xorm:"mediumtext" json:"ldapAttributes"`
+	IdJagIssuers []*FederatedCredential `xorm:"mediumtext" json:"idJagIssuers"`
+
+	LdapAttributes     []string `xorm:"mediumtext" json:"ldapAttributes"`
+	EnableLdapPassword bool     `xorm:"bool" json:"enableLdapPassword"`
+	EnableRadius       bool     `xorm:"bool" json:"enableRadius"`
+	DisableRadiusMfa   bool     `xorm:"bool" json:"disableRadiusMfa"`
 
 	KerberosRealm       string `xorm:"varchar(200)" json:"kerberosRealm"`
 	KerberosKdcHost     string `xorm:"varchar(200)" json:"kerberosKdcHost"`
